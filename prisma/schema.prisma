@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(128)
+  name      String   @db.VarChar(64)
+  role      Role     @default(USER)
+   // 【新增字段】：存储 Bcrypt 密文哈希值，长度固定设为 128
+  password  String @default("") @db.VarChar(128)
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
+  posts     Post[]
+   //  【新增这一行】建立用户与 AI 会话的一对多反向关联
+  conversations Conversation[]
+   //  【新增这一行】建立用户与创建的角色模版 1:N 关联
+  promptTemplates PromptTemplate[]
+
+  @@map("users")
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  content   String?  @db.Text
+  published Boolean  @default(false)
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  authorId  Int      @map("author_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  tags      Tag[]    @relation("posttotag")
+
+  @@index([authorId])
+  @@map("posts")
+}
+
+model Tag {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique @db.VarChar(32)
+  //  核心修改：恢复必填、恢复默认值、强制指定精度为 0
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0) 
+  posts     Post[]    @relation("posttotag")
+
+  @@map("tags")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// 【新增枚举】严格约束聊天角色，与 OpenAI SDK 协议 100% 对齐
+enum MessageRole {
+  system
+  user
+  assistant
+}
+
+// 【新增模型】AI 对话会话表（左侧历史记录列表）
+model Conversation {
+  id        Int       @id @default(autoincrement())
+  title     String    @db.VarChar(100) // 会话标题（默认截取第一句提问）
+  userId    Int       @map("user_id")
+  //  【新增这一行】可选字段：绑定的预设角色模版 ID（不选则为普通默认助手）
+  templateId Int?      @map("template_id")
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+   //  【新增这一行】如果模版被删，会话依然保留，templateId 自动置空 (SetNull)
+  template PromptTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  messages  Message[]
+
+  @@index([userId])
+  @@map("conversations")
+}
+
+// 【新增模型】AI 消息明细表（右侧聊天气泡流水）
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int          @map("conversation_id")
+  role           MessageRole
+  content        String       @db.Text
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+// 新增 PromptTemplate 模型
+model PromptTemplate {
+  id           Int      @id @default(autoincrement())
+  title        String   @db.VarChar(64)    // 模版名称，如：“电商金牌客服”
+  description  String?  @db.VarChar(255)   // 简短描述
+  systemPrompt String   @db.Text @map("system_prompt") // 核心提示词内容
+  isPublic     Boolean  @default(false) @map("is_public") // true=全平台公开模版，false=仅创建人私有
+  userId       Int      @map("user_id")
+  isDeleted    Boolean  @default(false) @map("is_deleted")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+
+  @@index([userId])
+  @@map("prompt_templates")
+}

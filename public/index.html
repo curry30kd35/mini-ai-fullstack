@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mini - 企业级 AI 助手工作台</title>
+  <style>
+    :root {
+      --bg-sidebar: #0f172a;
+      --bg-sidebar-hover: #1e293b;
+      --bg-sidebar-active: #2563eb;
+      --bg-main: #ffffff;
+      --bg-surface: #f8fafc;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background-color: var(--bg-surface);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* ==================== 左侧边栏 ==================== */
+    .sidebar {
+      width: 280px;
+      background-color: var(--bg-sidebar);
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid #1e293b;
+    }
+
+    .sidebar-header {
+      padding: 18px 16px 12px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .sidebar-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-new-chat {
+      flex: 1;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-new-chat:hover { background: var(--primary-hover); }
+
+    .btn-manage-tpl {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 9px 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .btn-manage-tpl:hover { background: #334155; color: #fff; }
+
+    .sidebar-section-title {
+      padding: 12px 16px 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #94a3b8;
+    }
+
+    .conversation-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .conversation-list::-webkit-scrollbar { width: 5px; }
+    .conversation-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+    .conv-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: background 0.15s;
+      position: relative;
+    }
+    .conv-item:hover { background: var(--bg-sidebar-hover); }
+    .conv-item.active { background: rgba(37, 99, 235, 0.22); border: 1px solid rgba(59, 130, 246, 0.45); }
+
+    .conv-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .conv-title {
+      font-size: 13px;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 3px;
+    }
+    .conv-meta {
+      font-size: 11px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .conv-tpl-tag {
+      background: #1e293b;
+      color: #93c5fd;
+      padding: 1px 6px;
+      border-radius: 4px;
+      max-width: 110px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .conv-ops {
+      display: none;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .conv-item:hover .conv-ops { display: flex; }
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .icon-btn:hover { background: #334155; color: #fff; }
+    .icon-btn.del:hover { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+    .sidebar-footer {
+      padding: 12px 14px;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #0b1120;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: #93c5fd;
+      flex-shrink: 0;
+    }
+    .user-meta { min-width: 0; }
+    .user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .user-role {
+      font-size: 11px;
+      color: #64748b;
+    }
+    .btn-auth {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-auth:hover { background: #334155; color: #fff; }
+
+    /* ==================== 右侧主对话区 ==================== */
+    .main-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      min-width: 0;
+    }
+
+    .top-bar {
+      height: 58px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+    }
+
+    .top-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .top-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .badge {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      white-space: nowrap;
+    }
+    .badge.default {
+      background: #f1f5f9;
+      color: #475569;
+      border-color: #cbd5e1;
+    }
+
+    .chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 10%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      background: #ffffff;
+    }
+    .chat-box::-webkit-scrollbar { width: 6px; }
+    .chat-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    /* 欢迎页 & 模版选择器 */
+    .welcome-panel {
+      margin: auto 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 20px 0;
+    }
+    .welcome-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #0f172a;
+    }
+    .welcome-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    .tpl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      width: 100%;
+      max-width: 760px;
+    }
+    .tpl-card {
+      text-align: left;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border-color);
+      background: var(--bg-surface);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tpl-card:hover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+      transform: translateY(-1px);
+    }
+    .tpl-card.selected {
+      border-color: var(--primary);
+      background: #eff6ff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .tpl-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+    .tpl-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .tpl-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    .tpl-tag.private { background: #f1f5f9; color: #475569; }
+    .tpl-card-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* 消息气泡 */
+    .msg-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .msg-row.user { flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .msg-row.ai .msg-avatar { background: #eff6ff; border: 1px solid #dbeafe; }
+    .msg-row.user .msg-avatar { background: #2563eb; color: #fff; font-size: 13px; font-weight: 600; }
+
+    .msg-bubble {
+      max-width: 78%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 14.5px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+    .msg-row.user .msg-bubble {
+      background: var(--primary);
+      color: #ffffff;
+      border-top-right-radius: 4px;
+      white-space: pre-wrap;
+    }
+    .msg-row.ai .msg-bubble {
+      background: #f8fafc;
+      color: #1e293b;
+      border: 1px solid var(--border-color);
+      border-top-left-radius: 4px;
+    }
+    .msg-row.error .msg-bubble {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #2563eb;
+      background: #eff6ff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    /* Markdown 内部排版 */
+    .md-content p { margin-bottom: 8px; }
+    .md-content p:last-child { margin-bottom: 0; }
+    .md-content ul, .md-content ol { padding-left: 20px; margin-bottom: 8px; }
+    .md-content li { margin-bottom: 4px; }
+    .md-content code {
+      background: #e2e8f0;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      color: #be123c;
+    }
+    .md-content pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+    .md-content pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+    .md-content a { color: #2563eb; text-decoration: underline; }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 15px;
+      background-color: #2563eb;
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom;
+      margin-left: 3px;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* 底部输入区 */
+    .input-wrapper {
+      padding: 14px 10% 20px;
+      background: #ffffff;
+      border-top: 1px solid var(--border-color);
+    }
+    .input-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-surface);
+      border: 1.5px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 10px 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-box:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      background: #fff;
+    }
+    .input-box textarea {
+      flex: 1;
+      border: none;
+      background: transparent;
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 14.5px;
+      line-height: 1.5;
+      max-height: 140px;
+      min-height: 24px;
+      color: var(--text-main);
+    }
+    .btn-send {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 8px 18px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-send:hover { background: var(--primary-hover); }
+    .btn-send.stop { background: var(--danger); }
+    .btn-send:disabled { background: #94a3b8; cursor: not-allowed; }
+    .input-hint {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ==================== 弹窗通用样式 ==================== */
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal-mask.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+    }
+    .modal.small { max-width: 420px; }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-family: inherit;
+      outline: none;
+    }
+    .form-input:focus, .form-textarea:focus { border-color: var(--primary); }
+    .form-textarea { min-height: 90px; resize: vertical; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tpl-manage-item {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--bg-surface);
+    }
+    .tpl-manage-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .btn-mini {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      cursor: pointer;
+    }
+    .btn-mini.danger { color: var(--danger); border-color: #fecaca; }
+    .btn-mini.danger:hover { background: #fef2f2; }
+
+    .alert-error {
+      background: #fef2f2;
+      color: #b91c1c;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      margin-bottom: 12px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 左侧边栏：会话管理与用户面板 -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">🤖</div>
+        <span>mini AI 工作台</span>
+      </div>
+      <div class="sidebar-actions">
+        <button class="btn-new-chat" id="newChatBtn">＋ 新建对话</button>
+        <button class="btn-manage-tpl" id="managePromptsBtn" title="管理角色预设模版">🎭 模版</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section-title">历史会话（点击恢复上下文）</div>
+    <div class="conversation-list" id="conversationList">
+      <!-- 动态加载会话 -->
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="userName">未登录</div>
+          <div class="user-role" id="userRoleBadge">请先登录</div>
+        </div>
+      </div>
+      <button class="btn-auth" id="authBtn">切换/登录</button>
+    </div>
+  </aside>
+
+  <!-- 右侧主工作区 -->
+  <main class="main-stage">
+    <header class="top-bar">
+      <div class="top-title-wrap">
+        <span class="top-title" id="currentChatTitle">新对话</span>
+        <span class="badge default" id="activeTemplateBadge">默认智能助手</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted);" id="convIdHint">未创建会话</div>
+    </header>
+
+    <div class="chat-box" id="chatBox">
+      <!-- 欢迎面板 / 历史消息列表 -->
+    </div>
+
+    <div class="input-wrapper">
+      <div class="input-box">
+        <textarea id="userInput" rows="1" placeholder="输入你的问题（Enter 发送，Shift + Enter 换行）..."></textarea>
+        <button class="btn-send" id="sendBtn">发送</button>
+      </div>
+      <div class="input-hint">
+        <span>已接入：JWT 鉴权 · 意图路由联网搜索 · MySQL 上下文记忆</span>
+        <span>限流保护：6次/分钟</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- 弹窗 1：登录 / 注册 -->
+  <div class="modal-mask" id="authModal">
+    <div class="modal small">
+      <div class="modal-header">
+        <span>账号登录 / 注册</span>
+        <button class="modal-close" id="closeAuthBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabs">
+          <button class="tab-btn active" id="authTabLogin">登录</button>
+          <button class="tab-btn" id="authTabRegister">注册新账号</button>
+        </div>
+        <div class="alert-error" id="authError"></div>
+        <div class="form-group" id="authNameGroup" style="display: none;">
+          <label class="form-label">昵称</label>
+          <input type="text" class="form-input" id="authName" placeholder="请输入 2~20 位用户名" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">邮箱</label>
+          <input type="email" class="form-input" id="authEmail" placeholder="例如：admin@qq.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input type="password" class="form-input" id="authPassword" placeholder="至少 6 位密码" />
+        </div>
+        <button class="btn-primary" style="width: 100%;" id="authSubmitBtn">立即登录</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 弹窗 2：角色模版管理 (PromptTemplate CRUD) -->
+  <div class="modal-mask" id="promptModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span>🎭 角色模版管理（PromptTemplate）</span>
+        <button class="modal-close" id="closePromptBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert-error" id="promptError"></div>
+
+        <!-- 新增 / 编辑表单 -->
+        <div style="background: var(--bg-surface); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 18px;">
+          <div style="font-weight: 600; font-size: 14px; margin-bottom: 10px;" id="promptFormTitle">✨ 创建新角色模版</div>
+          <input type="hidden" id="promptEditId" />
+          <div class="form-group">
+            <label class="form-label">模版名称 *</label>
+            <input type="text" class="form-input" id="tplTitle" placeholder="例如：闲鱼电商金牌售后客服" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">简短说明</label>
+            <input type="text" class="form-input" id="tplDesc" placeholder="描述该角色的擅长领域（选填）" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">系统人设提示词（System Prompt）*</label>
+            <textarea class="form-textarea" id="tplSystemPrompt" placeholder="设定 AI 的身份、语气、规则..."></textarea>
+          </div>
+          <div class="form-group" id="tplIsPublicGroup" style="display: none;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+              <input type="checkbox" id="tplIsPublic" />
+              <span>设为全平台官方推荐模版（仅管理员可见）</span>
+            </label>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-primary" id="savePromptBtn">保存模版</button>
+            <button class="btn-secondary" id="resetPromptBtn" style="display: none;">取消编辑</button>
+          </div>
+        </div>
+
+        <!-- 已有模版列表 -->
+        <div style="font-weight: 600; font-size: 14px; margin-bottom: 10px;">可用模版列表</div>
+        <div id="promptListContainer"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // 1. 改成相对路径！这样无论是本地 localhost:3000 还是线上 Render 域名都能无缝请求，永远不跨域！
+    const API_BASE = '/api/v3';
+    const AUTH_PREFIX = 'jwt ';
+    const TOKEN_STORAGE_KEY = 'mini_ai_token';
+    // 2. 清空写死的本地老 Token！因为云端是全新数据库，里面一开始没有 id=3 的用户
+    const FALLBACK_TOKEN = '';
+
+  
+  // ==================== 2. 全局应用状态 ====================
+  let state = {
+    token: localStorage.getItem(TOKEN_STORAGE_KEY) || FALLBACK_TOKEN,
+    currentUser: null,          // 当前登录用户信息 { id, name, email, role }
+    conversations: [],          // 左侧会话列表
+    templates: [],              // 角色模版列表
+    currentConversationId: null,// null = 新建对话中
+    selectedTemplateId: null,   // 新建对话时选定的模版 ID
+    isStreaming: false,
+    abortController: null,
+    authMode: 'login',          // 'login' | 'register'
+  };
+
+  // ==================== 3. 通用 API 请求封装 ====================
+  async function apiRequest(path, options = {}) {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(state.token ? { 'Authorization': `${AUTH_PREFIX}${state.token}` } : {}),
+      ...(options.headers || {}),
+    };
+
+    const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    const json = await res.json().catch(() => ({}));
+
+    if (res.status === 401) {
+      openAuthModal('登录状态已失效，请重新登录');
+      throw new Error(json.message || '未登录或 Token 已过期');
+    }
+
+    if (!res.ok || (json.code && json.code >= 400)) {
+      throw new Error(json.message || `请求失败 (${res.status})`);
+    }
+
+    // 兼容 TransformInterceptor 包装结构 { code, message, data }
+    return json.data !== undefined ? json.data : json;
+  }
+
+  // ==================== 4. 初始化加载 ====================
+  async function initApp() {
+    if (!state.token) {
+      openAuthModal();
+      return;
+    }
+    try {
+      await Promise.all([loadProfile(), loadTemplates(), loadConversations()]);
+      renderWelcomeStage();
+    } catch (err) {
+      console.error('初始化加载失败:', err);
+    }
+  }
+
+  async function loadProfile() {
+    const data = await apiRequest('/auth/profile');
+    state.currentUser = data.user;
+    document.getElementById('userName').textContent = state.currentUser.name || state.currentUser.email;
+    document.getElementById('userRoleBadge').textContent = state.currentUser.role === 'ADMIN' ? '管理员' : '普通用户';
+    document.getElementById('userAvatar').textContent = (state.currentUser.name || 'U').slice(0, 1).toUpperCase();
+    // 管理员显示设为公开选项
+    document.getElementById('tplIsPublicGroup').style.display = state.currentUser.role === 'ADMIN' ? 'block' : 'none';
+  }
+
+  // ==================== 5. 会话管理 (conversations & messages) ====================
+  async function loadConversations() {
+    const list = await apiRequest('/ai/conversations');
+    state.conversations = Array.isArray(list) ? list : [];
+    renderConversationList();
+  }
+
+  function renderConversationList() {
+    const container = document.getElementById('conversationList');
+    if (state.conversations.length === 0) {
+      container.innerHTML = `<div style="padding: 20px 10px; text-align: center; font-size: 12px; color: #64748b;">暂无历史会话，快去提问吧！</div>`;
+      return;
+    }
+
+    container.innerHTML = state.conversations.map(conv => {
+      const isActive = conv.id === state.currentConversationId;
+      const msgCount = conv._count?.messages ?? 0;
+      const tplBadge = conv.template?.title ? `<span class="conv-tpl-tag">${escapeHtml(conv.template.title)}</span>` : '';
+      return `
+        <div class="conv-item ${isActive ? 'active' : ''}" onclick="selectConversation(${conv.id})">
+          <div class="conv-info">
+            <div class="conv-title" title="${escapeHtml(conv.title)}">${escapeHtml(conv.title)}</div>
+            <div class="conv-meta">
+              ${tplBadge}
+              <span>${msgCount} 条消息</span>
+            </div>
+          </div>
+          <div class="conv-ops" onclick="event.stopPropagation()">
+            <button class="icon-btn" title="重命名" onclick="renameConversation(${conv.id}, '${escapeAttr(conv.title)}')">✏️</button>
+            <button class="icon-btn del" title="删除会话" onclick="deleteConversation(${conv.id})">🗑️</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 点击恢复历史会话上下文
+  async function selectConversation(conversationId) {
+    if (state.isStreaming) return alert('请先等待或停止当前 AI 回复后再切换会话');
+    try {
+      const data = await apiRequest(`/ai/conversations/${conversationId}/messages`);
+      state.currentConversationId = conversationId;
+      state.selectedTemplateId = null;
+
+      // 从已加载列表中查找绑定的角色标签
+      const convMeta = state.conversations.find(c => c.id === conversationId);
+      updateTopBar(data.conversation.title, convMeta?.template?.title || null, conversationId);
+
+      const chatBox = document.getElementById('chatBox');
+      chatBox.innerHTML = '';
+
+      if (!data.messages || data.messages.length === 0) {
+        chatBox.innerHTML = `<div style="text-align:center; color:#94a3b8; font-size:13px; margin-top:40px;">该会话暂无消息记录</div>`;
+      } else {
+        data.messages.forEach(msg => {
+          appendMessage(msg.role === 'user' ? 'user' : 'ai', msg.content, false);
+        });
+      }
+
+      renderConversationList();
+      scrollToBottom();
+    } catch (err) {
+      alert('恢复会话失败：' + err.message);
+    }
+  }
+
+  async function renameConversation(id, oldTitle) {
+    const newTitle = prompt('请输入新的会话标题：', oldTitle);
+    if (!newTitle || !newTitle.trim() || newTitle.trim() === oldTitle) return;
+    try {
+      await apiRequest(`/ai/conversations/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ title: newTitle.trim() }),
+      });
+      await loadConversations();
+      if (state.currentConversationId === id) {
+        document.getElementById('currentChatTitle').textContent = newTitle.trim();
+      }
+    } catch (err) {
+      alert('重命名失败：' + err.message);
+    }
+  }
+
+  async function deleteConversation(id) {
+    if (!confirm('确定要删除这条会话记录吗？（软删除后列表不再展示）')) return;
+    try {
+      await apiRequest(`/ai/conversations/${id}`, { method: 'DELETE' });
+      if (state.currentConversationId === id) {
+        startNewChat();
+      }
+      await loadConversations();
+    } catch (err) {
+      alert('删除失败：' + err.message);
+    }
+  }
+
+  function startNewChat() {
+    if (state.isStreaming) return;
+    state.currentConversationId = null;
+    updateTopBar('新对话', getSelectedTemplateTitle(), null);
+    renderConversationList();
+    renderWelcomeStage();
+  }
+
+  function updateTopBar(title, templateTitle, convId) {
+    document.getElementById('currentChatTitle').textContent = title || '新对话';
+    const badge = document.getElementById('activeTemplateBadge');
+    if (templateTitle) {
+      badge.textContent = `🎭 ${templateTitle}`;
+      badge.className = 'badge';
+    } else {
+      badge.textContent = '默认智能助手';
+      badge.className = 'badge default';
+    }
+    document.getElementById('convIdHint').textContent = convId ? `会话 ID: #${convId}` : '新会话（首问自动建库）';
+  }
+
+  // ==================== 6. 模版选择与管理 (PromptTemplate) ====================
+  async function loadTemplates() {
+    const list = await apiRequest('/prompt');
+    state.templates = Array.isArray(list) ? list : [];
+    renderPromptManageList();
+    if (!state.currentConversationId) {
+      renderWelcomeStage();
+    }
+  }
+
+  function getSelectedTemplateTitle() {
+    if (!state.selectedTemplateId) return null;
+    return state.templates.find(t => t.id === state.selectedTemplateId)?.title || null;
+  }
+
+  function renderWelcomeStage() {
+    if (state.currentConversationId !== null) return;
+    const chatBox = document.getElementById('chatBox');
+
+    const cardsHtml = [
+      `<div class="tpl-card ${state.selectedTemplateId === null ? 'selected' : ''}" onclick="chooseTemplate(null)">
+        <div class="tpl-card-head">
+          <span class="tpl-card-title">🤖 默认智能助手</span>
+          <span class="tpl-tag">内置</span>
+        </div>
+        <div class="tpl-card-desc">联网检索助手，适合日常问答、代码与总结。</div>
+      </div>`,
+      ...state.templates.map(tpl => `
+        <div class="tpl-card ${state.selectedTemplateId === tpl.id ? 'selected' : ''}" onclick="chooseTemplate(${tpl.id})">
+          <div class="tpl-card-head">
+            <span class="tpl-card-title">🎭 ${escapeHtml(tpl.title)}</span>
+            <span class="tpl-tag ${tpl.isPublic ? '' : 'private'}">${tpl.isPublic ? '官方推荐' : '我的私有'}</span>
+          </div>
+          <div class="tpl-card-desc">${escapeHtml(tpl.description || tpl.systemPrompt)}</div>
+        </div>
+      `)
+    ].join('');
+
+    chatBox.innerHTML = `
+      <div class="welcome-panel">
+        <div class="welcome-title">今天想聊点什么？</div>
+        <div class="welcome-sub">请先选择下方 AI 角色模版（选定后新会话将绑定该人设），然后直接输入提问</div>
+        <div class="tpl-grid">${cardsHtml}</div>
+      </div>
+    `;
+  }
+
+  function chooseTemplate(tplId) {
+    state.selectedTemplateId = tplId;
+    updateTopBar('新对话', getSelectedTemplateTitle(), null);
+    renderWelcomeStage();
+  }
+
+  function renderPromptManageList() {
+    const container = document.getElementById('promptListContainer');
+    if (state.templates.length === 0) {
+      container.innerHTML = `<div style="color: #94a3b8; font-size: 13px; text-align: center; padding: 16px;">暂无自定义模版，可在上方创建！</div>`;
+      return;
+    }
+
+    container.innerHTML = state.templates.map(tpl => {
+      const canEdit = state.currentUser && (tpl.userId === state.currentUser.id || state.currentUser.role === 'ADMIN');
+      return `
+        <div class="tpl-manage-item">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <strong style="font-size:14px;">${escapeHtml(tpl.title)}</strong>
+              <span class="tpl-tag ${tpl.isPublic ? '' : 'private'}">${tpl.isPublic ? '公开' : '私有'}</span>
+            </div>
+            ${tpl.description ? `<div style="font-size:12px; color:#64748b; margin-bottom:4px;">${escapeHtml(tpl.description)}</div>` : ''}
+            <div style="font-size:12px; color:#334155; background:#fff; padding:6px 8px; border-radius:6px; border:1px solid #e2e8f0; max-height:60px; overflow:hidden;">
+              ${escapeHtml(tpl.systemPrompt)}
+            </div>
+          </div>
+          ${canEdit ? `
+            <div class="tpl-manage-actions">
+              <button class="btn-mini" onclick="editTemplate(${tpl.id})">编辑</button>
+              <button class="btn-mini danger" onclick="deleteTemplate(${tpl.id})">删除</button>
+            </div>
+          ` : `<span style="font-size:11px; color:#94a3b8;">只读</span>`}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function editTemplate(id) {
+    const tpl = state.templates.find(t => t.id === id);
+    if (!tpl) return;
+    document.getElementById('promptEditId').value = tpl.id;
+    document.getElementById('promptFormTitle').textContent = `✏️ 编辑角色模版 #${tpl.id}`;
+    document.getElementById('tplTitle').value = tpl.title;
+    document.getElementById('tplDesc').value = tpl.description || '';
+    document.getElementById('tplSystemPrompt').value = tpl.systemPrompt;
+    document.getElementById('tplIsPublic').checked = Boolean(tpl.isPublic);
+    document.getElementById('resetPromptBtn').style.display = 'inline-block';
+  }
+
+  function resetPromptForm() {
+    document.getElementById('promptEditId').value = '';
+    document.getElementById('promptFormTitle').textContent = '✨ 创建新角色模版';
+    document.getElementById('tplTitle').value = '';
+    document.getElementById('tplDesc').value = '';
+    document.getElementById('tplSystemPrompt').value = '';
+    document.getElementById('tplIsPublic').checked = false;
+    document.getElementById('resetPromptBtn').style.display = 'none';
+    hideError('promptError');
+  }
+
+  async function saveTemplate() {
+    hideError('promptError');
+    const editId = document.getElementById('promptEditId').value;
+    const title = document.getElementById('tplTitle').value.trim();
+    const description = document.getElementById('tplDesc').value.trim();
+    const systemPrompt = document.getElementById('tplSystemPrompt').value.trim();
+    const isPublic = document.getElementById('tplIsPublic').checked;
+
+    if (!title || !systemPrompt) {
+      return showError('promptError', '模版名称和系统提示词不能为空！');
+    }
+
+    const payload = { title, systemPrompt, ...(description ? { description } : {}) };
+    if (state.currentUser?.role === 'ADMIN') {
+      payload.isPublic = isPublic;
+    }
+
+    try {
+      if (editId) {
+        await apiRequest(`/prompt/${editId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+      } else {
+        await apiRequest('/prompt', { method: 'POST', body: JSON.stringify(payload) });
+      }
+      resetPromptForm();
+      await loadTemplates();
+    } catch (err) {
+      showError('promptError', err.message);
+    }
+  }
+
+  async function deleteTemplate(id) {
+    if (!confirm('确定要删除该角色模版吗？（已绑定该模版的历史对话不受影响）')) return;
+    try {
+      await apiRequest(`/prompt/${id}`, { method: 'DELETE' });
+      if (state.selectedTemplateId === id) {
+        state.selectedTemplateId = null;
+        updateTopBar('新对话', null, state.currentConversationId);
+      }
+      await loadTemplates();
+    } catch (err) {
+      showError('promptError', err.message);
+    }
+  }
+
+  // ==================== 7. 核心 SSE 流式聊天与停止控制 ====================
+  async function sendMessage() {
+    if (state.isStreaming) {
+      // 点击停止输出
+      state.abortController?.abort();
+      return;
+    }
+
+    const inputEl = document.getElementById('userInput');
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    // 如果当前还在欢迎界面，清空欢迎卡片准备进入对话流
+    if (document.querySelector('.welcome-panel')) {
+      document.getElementById('chatBox').innerHTML = '';
+    }
+
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+
+    // 1. 渲染用户气泡
+    appendMessage('user', text, false);
+
+    // 2. 创建 AI 气泡占位
+    const { bubbleEl, statusEl, contentEl } = createAiStreamingBubble();
+    let fullAIContent = '';
+    let isNewConv = !state.currentConversationId;
+
+    state.isStreaming = true;
+    state.abortController = new AbortController();
+    updateSendButtonState(true);
+
+    try {
+      const requestBody = {
+        prompt: text,
+        ...(state.currentConversationId
+          ? { conversationId: state.currentConversationId }
+          : (state.selectedTemplateId ? { templateId: state.selectedTemplateId } : {})),
+      };
+
+      const response = await fetch(`${API_BASE}/ai/chat`, {
+        method: 'POST',
+        signal: state.abortController.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `${AUTH_PREFIX}${state.token}`,
+          'Accept': 'text/event-stream',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        if (response.status === 401) openAuthModal('Token 已失效，请重新登录');
+        if (response.status === 429) throw new Error('触发限流保护：每分钟最多发送 6 次请求，请稍歇片刻再试！');
+        throw new Error(errJson.message || `HTTP 异常 (${response.status})`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+          const dataStr = trimmed.slice(6);
+          if (dataStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(dataStr);
+
+            if (parsed.type === 'meta' && parsed.conversationId) {
+              state.currentConversationId = parsed.conversationId;
+              document.getElementById('convIdHint').textContent = `会话 ID: #${parsed.conversationId}`;
+            } else if (parsed.type === 'status' && parsed.message) {
+              statusEl.style.display = 'inline-flex';
+              statusEl.textContent = `🌐 ${parsed.message}`;
+              scrollToBottom();
+            } else if (parsed.type === 'content' && parsed.content) {
+              fullAIContent += parsed.content;
+              contentEl.innerHTML = renderMarkdownSafe(fullAIContent) + '<span class="typing-cursor"></span>';
+              scrollToBottom();
+            } else if (parsed.type === 'error') {
+              throw new Error(parsed.message || '大模型响应异常');
+            }
+          } catch (e) {
+            if (e.message && e.message !== 'Unexpected end of JSON input' && !e.message.includes('JSON')) {
+              throw e;
+            }
+          }
+        }
+      }
+
+      contentEl.innerHTML = renderMarkdownSafe(fullAIContent || '（空响应）');
+
+      // 刷新左侧列表，保证新标题、消息条数与活跃置顶实时同步
+      await loadConversations();
+      if (isNewConv && state.currentConversationId) {
+        const createdConv = state.conversations.find(c => c.id === state.currentConversationId);
+        if (createdConv) {
+          updateTopBar(createdConv.title, createdConv.template?.title || getSelectedTemplateTitle(), createdConv.id);
+        }
+      }
+
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        contentEl.innerHTML = renderMarkdownSafe(fullAIContent + '\n\n*(已手动停止生成)*');
+      } else {
+        bubbleEl.parentElement.classList.add('error');
+        contentEl.innerHTML = ` ${escapeHtml(err.message)}`;
+      }
+    } finally {
+      state.isStreaming = false;
+      state.abortController = null;
+      updateSendButtonState(false);
+      inputEl.focus();
+      scrollToBottom();
+    }
+  }
+
+  function updateSendButtonState(streaming) {
+    const btn = document.getElementById('sendBtn');
+    if (streaming) {
+      btn.textContent = '停止';
+      btn.classList.add('stop');
+    } else {
+      btn.textContent = '发送';
+      btn.classList.remove('stop');
+    }
+  }
+
+  function appendMessage(role, content, isStreaming = false) {
+    const chatBox = document.getElementById('chatBox');
+    const row = document.createElement('div');
+    row.className = `msg-row ${role}`;
+
+    const avatarText = role === 'user' ? (state.currentUser?.name?.slice(0, 1).toUpperCase() || '我') : '🤖';
+    const bodyHtml = role === 'user'
+      ? escapeHtml(content)
+      : `<div class="md-content">${renderMarkdownSafe(content)}</div>`;
+
+    row.innerHTML = `
+      <div class="msg-avatar">${avatarText}</div>
+      <div class="msg-bubble">${bodyHtml}</div>
+    `;
+    chatBox.appendChild(row);
+    scrollToBottom();
+  }
+
+  function createAiStreamingBubble() {
+    const chatBox = document.getElementById('chatBox');
+    const row = document.createElement('div');
+    row.className = 'msg-row ai';
+    row.innerHTML = `
+      <div class="msg-avatar">🤖</div>
+      <div class="msg-bubble">
+        <div class="status-pill" style="display: none;"></div>
+        <div class="md-content"><span class="typing-cursor"></span></div>
+      </div>
+    `;
+    chatBox.appendChild(row);
+    scrollToBottom();
+    return {
+      bubbleEl: row.querySelector('.msg-bubble'),
+      statusEl: row.querySelector('.status-pill'),
+      contentEl: row.querySelector('.md-content'),
+    };
+  }
+
+  // ==================== 8. 登录 / 注册逻辑 ====================
+  function openAuthModal(errMsg = '') {
+    hideError('authError');
+    if (errMsg) showError('authError', errMsg);
+    document.getElementById('authModal').classList.add('open');
+  }
+
+  function switchAuthMode(mode) {
+    state.authMode = mode;
+    hideError('authError');
+    document.getElementById('authTabLogin').classList.toggle('active', mode === 'login');
+    document.getElementById('authTabRegister').classList.toggle('active', mode === 'register');
+    document.getElementById('authNameGroup').style.display = mode === 'register' ? 'block' : 'none';
+    document.getElementById('authSubmitBtn').textContent = mode === 'login' ? '立即登录' : '注册并自动登录';
+  }
+
+  async function handleAuthSubmit() {
+    hideError('authError');
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value.trim();
+    const name = document.getElementById('authName').value.trim();
+
+    if (!email || !password) return showError('authError', '请填写完整邮箱和密码');
+
+    try {
+      if (state.authMode === 'register') {
+        if (!name) return showError('authError', '请填写昵称');
+        await apiRequest('/auth/register', {
+          method: 'POST',
+          headers: { 'Authorization': '' },
+          body: JSON.stringify({ email, name, password }),
+        });
+      }
+
+      const loginData = await apiRequest('/auth/login', {
+        method: 'POST',
+        headers: { 'Authorization': '' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      state.token = loginData.accessToken;
+      localStorage.setItem(TOKEN_STORAGE_KEY, state.token);
+      document.getElementById('authModal').classList.remove('open');
+
+      state.currentConversationId = null;
+      state.selectedTemplateId = null;
+      await initApp();
+    } catch (err) {
+      showError('authError', err.message);
+    }
+  }
+
+  // ==================== 9. 工具函数：防 XSS 安全转义与轻量 Markdown 解析 ====================
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function escapeAttr(str) {
+    return escapeHtml(str).replace(/'/g, '&#39;');
+  }
+
+  function renderMarkdownSafe(text) {
+    let safe = escapeHtml(text);
+    const codeBlocks = [];
+
+    // 1. 提取代码块避免内部符号被破坏
+    safe = safe.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeBlocks.length;
+      codeBlocks.push(`<pre><code>${code}</code></pre>`);
+      return `__CODE_BLOCK_${idx}__`;
+    });
+
+    // 2. 行内代码、粗体、链接
+    safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
+    safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    safe = safe.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+    // 3. 换行转段落/换行
+    safe = safe.replace(/\n/g, '<br />');
+
+    // 4. 还原代码块
+    codeBlocks.forEach((block, idx) => {
+      safe = safe.replace(`__CODE_BLOCK_${idx}__`, block);
+    });
+
+    return safe;
+  }
+
+  function scrollToBottom() {
+    const chatBox = document.getElementById('chatBox');
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function hideError(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  // ==================== 10. 事件绑定 ====================
+  document.getElementById('newChatBtn').addEventListener('click', startNewChat);
+  document.getElementById('sendBtn').addEventListener('click', sendMessage);
+  document.getElementById('authBtn').addEventListener('click', () => openAuthModal());
+  document.getElementById('closeAuthBtn').addEventListener('click', () => document.getElementById('authModal').classList.remove('open'));
+  document.getElementById('authTabLogin').addEventListener('click', () => switchAuthMode('login'));
+  document.getElementById('authTabRegister').addEventListener('click', () => switchAuthMode('register'));
+  document.getElementById('authSubmitBtn').addEventListener('click', handleAuthSubmit);
+
+  document.getElementById('managePromptsBtn').addEventListener('click', () => {
+    resetPromptForm();
+    loadTemplates();
+    document.getElementById('promptModal').classList.add('open');
+  });
+  document.getElementById('closePromptBtn').addEventListener('click', () => document.getElementById('promptModal').classList.remove('open'));
+  document.getElementById('savePromptBtn').addEventListener('click', saveTemplate);
+  document.getElementById('resetPromptBtn').addEventListener('click', resetPromptForm);
+
+  // 输入框自适应高度 & 回车发送
+  const userInputEl = document.getElementById('userInput');
+  userInputEl.addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+  });
+  userInputEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // 启动页面
+  initApp();
+</script>
+</body>
+</html>
