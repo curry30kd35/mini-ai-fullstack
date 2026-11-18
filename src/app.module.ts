@@ -23,23 +23,23 @@ import { PromptModule } from './modules/prompt/prompt.module';
     UserModule,
     PrismaModule,
     ConfigModule.forRoot({ isGlobal: true }), // 全局加载 .env
-    TypeOrmModule.forRootAsync({
-      inject: [ConfigService], // 注入 ConfigService
-      useFactory: async (configService: ConfigService) => ({
-        type: 'mysql', // 数据库类型
-        host: configService.get<string>('DB_HOST', 'localhost'), //数据库地址 第二个参数是默认值
-        port: configService.get<number>('DB_PORT', 3306), // 数据库端口
-        username: configService.get<string>('DB_USERNAME'), // 数据库用户名
-        password: configService.get<string>('DB_PASSWORD'), // 数据库密码
-        database: configService.get<string>('DB_DATABASE'), // 数据库名称
-        entities: [User], // 注册实体
-        autoLoadEntities: true, //开启自动加载，这样 forFeature 里注册了啥，它就加载啥
-        synchronize: false, // 自动建表 (仅限开发环境)---synchronize: true 仅在开发环境使用，它会自动根据实体创建或修改表结构。生产环境必须设为 false，否则可能导致数据丢失
-        dateStrings: true, // 核心：让驱动直接返回 'YYYY-MM-DD HH:mm:ss' 字符串
-        timezone: '+08:00', // 加上这个，防止服务器和数据库时区不一致导致差 8 小时
-      }),
-    }),
-    TypeOrmModule.forFeature([User]),
+    // TypeOrmModule.forRootAsync({
+    //   inject: [ConfigService], // 注入 ConfigService
+    //   useFactory: async (configService: ConfigService) => ({
+    //     type: 'mysql', // 数据库类型
+    //     host: configService.get<string>('DB_HOST', 'localhost'), //数据库地址 第二个参数是默认值
+    //     port: configService.get<number>('DB_PORT', 3306), // 数据库端口
+    //     username: configService.get<string>('DB_USERNAME'), // 数据库用户名
+    //     password: configService.get<string>('DB_PASSWORD'), // 数据库密码
+    //     database: configService.get<string>('DB_DATABASE'), // 数据库名称
+    //     entities: [User], // 注册实体
+    //     autoLoadEntities: true, //开启自动加载，这样 forFeature 里注册了啥，它就加载啥
+    //     synchronize: false, // 自动建表 (仅限开发环境)---synchronize: true 仅在开发环境使用，它会自动根据实体创建或修改表结构。生产环境必须设为 false，否则可能导致数据丢失
+    //     dateStrings: true, // 核心：让驱动直接返回 'YYYY-MM-DD HH:mm:ss' 字符串
+    //     timezone: '+08:00', // 加上这个，防止服务器和数据库时区不一致导致差 8 小时
+    //   }),
+    // }),
+    // TypeOrmModule.forFeature([User]),
     OrdersModule,
     PostModule,
     ArticleModule,

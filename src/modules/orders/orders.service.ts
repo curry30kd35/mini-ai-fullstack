@@ -107,27 +107,27 @@ export class OrdersService {
     //   }
     // });
 
-    const connection = await amqp.connect(
-      'amqp://admin:admin123@localhost:5672',
-    );
-    const channel = await connection.createChannel();
+    // const connection = await amqp.connect(
+    //   'amqp://admin:admin123@localhost:5672',
+    // );
+    // const channel = await connection.createChannel();
 
-    const queue = 'order_queue';
-    await channel.assertQueue(queue, { durable: true }); // 持久化，防止MQ宕机丢消息
+    // const queue = 'order_queue';
+    // await channel.assertQueue(queue, { durable: true }); // 持久化，防止MQ宕机丢消息
 
-    // 构建消息体
-    const message = JSON.stringify({
-      userId: body.user_id,
-      goodsName: body.goodsName,
-      amount: body.amount,
-      createTime: new Date().toISOString(),
-    });
+    // // 构建消息体
+    // const message = JSON.stringify({
+    //   userId: body.user_id,
+    //   goodsName: body.goodsName,
+    //   amount: body.amount,
+    //   createTime: new Date().toISOString(),
+    // });
 
-    // 发送到队列（第三个参数 true 表示消息持久化）
-    channel.sendToQueue(queue, Buffer.from(message), { persistent: true });
+    // // 发送到队列（第三个参数 true 表示消息持久化）
+    // channel.sendToQueue(queue, Buffer.from(message), { persistent: true });
 
-    await channel.close();
-    await connection.close();
+    // await channel.close();
+    // await connection.close();
 
     // 瞬间返回给前端，不用等数据库落盘
     return { code: 202, message: '下单请求已受理，正在排队处理中...' };
