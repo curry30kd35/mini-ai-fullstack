@@ -1,3 +1,8 @@
+个人作品链接：https://mini-curry-ai.onrender.com
+github仓库：https://github.com/curry30kd35/mini-ai-fullstack
+
+
+
 ```bash
 $ npm install
 ```

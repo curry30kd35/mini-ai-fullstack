@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>mini - 企业级 AI 助手工作台</title>
   <style>
     :root {
@@ -22,13 +22,24 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-      background-color: var(--bg-surface);
-      color: var(--text-main);
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
+    html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background-color: var(--bg-surface);
+    color: var(--text-main);
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none; /* 禁止下拉/横拉露出底层空白 */
+  }
+  body {
+    display: flex;
+  }
+
+    /* 移动端抽屉遮罩（PC 端始终隐藏） */
+    .sidebar-backdrop {
+      display: none;
     }
 
     /* ==================== 左侧边栏 ==================== */
@@ -40,6 +51,7 @@
       flex-direction: column;
       flex-shrink: 0;
       border-right: 1px solid #1e293b;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .sidebar-header {
@@ -50,11 +62,18 @@
     .brand {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 10px;
       font-size: 16px;
       font-weight: 700;
       margin-bottom: 14px;
       letter-spacing: 0.5px;
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .brand-icon {
@@ -66,6 +85,21 @@
       align-items: center;
       justify-content: center;
       font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-close-btn {
+      display: none; /* PC 端隐藏 */
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      font-size: 18px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
     }
 
     .sidebar-actions {
@@ -177,9 +211,9 @@
       border: none;
       color: #94a3b8;
       cursor: pointer;
-      padding: 4px;
+      padding: 5px;
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 13px;
       line-height: 1;
     }
     .icon-btn:hover { background: #334155; color: #fff; }
@@ -187,6 +221,7 @@
 
     .sidebar-footer {
       padding: 12px 14px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
       border-top: 1px solid #1e293b;
       display: flex;
       align-items: center;
@@ -230,7 +265,7 @@
       background: #1e293b;
       border: 1px solid #334155;
       color: #cbd5e1;
-      padding: 5px 10px;
+      padding: 6px 10px;
       border-radius: 6px;
       font-size: 12px;
       cursor: pointer;
@@ -254,8 +289,10 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(255, 255, 255, 0.9);
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(8px);
+      flex-shrink: 0;
     }
 
     .top-title-wrap {
@@ -263,7 +300,26 @@
       align-items: center;
       gap: 10px;
       min-width: 0;
+      flex: 1;
     }
+
+    /* 移动端汉堡菜单按钮（PC 端隐藏） */
+    .menu-toggle-btn {
+      display: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-size: 18px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .menu-toggle-btn:active { background: #e2e8f0; }
+
     .top-title {
       font-size: 15px;
       font-weight: 600;
@@ -280,11 +336,22 @@
       color: #1d4ed8;
       border: 1px solid #bfdbfe;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+      max-width: 180px;
     }
     .badge.default {
       background: #f1f5f9;
       color: #475569;
       border-color: #cbd5e1;
+    }
+
+    .conv-id-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .chat-box {
@@ -295,6 +362,7 @@
       flex-direction: column;
       gap: 20px;
       background: #ffffff;
+      -webkit-overflow-scrolling: touch;
     }
     .chat-box::-webkit-scrollbar { width: 6px; }
     .chat-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -318,6 +386,7 @@
       font-size: 14px;
       color: var(--text-muted);
       margin-bottom: 24px;
+      line-height: 1.5;
     }
     .tpl-grid {
       display: grid;
@@ -363,6 +432,7 @@
       border-radius: 4px;
       background: #dbeafe;
       color: #1d4ed8;
+      flex-shrink: 0;
     }
     .tpl-tag.private { background: #f1f5f9; color: #475569; }
     .tpl-card-desc {
@@ -403,6 +473,7 @@
       font-size: 14.5px;
       line-height: 1.65;
       word-break: break-word;
+      min-width: 0;
     }
     .msg-row.user .msg-bubble {
       background: var(--primary);
@@ -432,6 +503,8 @@
       padding: 4px 10px;
       border-radius: 6px;
       margin-bottom: 8px;
+      max-width: 100%;
+      word-break: break-all;
     }
 
     /* Markdown 内部排版 */
@@ -454,13 +527,14 @@
       border-radius: 8px;
       overflow-x: auto;
       margin: 8px 0;
+      max-width: 100%;
     }
     .md-content pre code {
       background: transparent;
       color: inherit;
       padding: 0;
     }
-    .md-content a { color: #2563eb; text-decoration: underline; }
+    .md-content a { color: #2563eb; text-decoration: underline; word-break: break-all; }
 
     .typing-cursor {
       display: inline-block;
@@ -476,8 +550,10 @@
     /* 底部输入区 */
     .input-wrapper {
       padding: 14px 10% 20px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
       background: #ffffff;
       border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
     }
     .input-box {
       display: flex;
@@ -496,6 +572,7 @@
     }
     .input-box textarea {
       flex: 1;
+      min-width: 0;
       border: none;
       background: transparent;
       resize: none;
@@ -524,10 +601,11 @@
     .btn-send:disabled { background: #94a3b8; cursor: not-allowed; }
     .input-hint {
       margin-top: 6px;
-      font-size: 11px;
+      font-size: 14px;
       color: #94a3b8;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
+      gap: 8px;
     }
 
     /* ==================== 弹窗通用样式 ==================== */
@@ -549,6 +627,7 @@
       width: 100%;
       max-width: 680px;
       max-height: 88vh;
+      max-height: 88dvh;
       display: flex;
       flex-direction: column;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
@@ -567,14 +646,16 @@
     .modal-close {
       background: none;
       border: none;
-      font-size: 20px;
+      font-size: 22px;
       color: var(--text-muted);
       cursor: pointer;
+      padding: 0 4px;
     }
     .modal-body {
       padding: 20px;
       overflow-y: auto;
       flex: 1;
+      -webkit-overflow-scrolling: touch;
     }
 
     .form-group { margin-bottom: 14px; }
@@ -654,7 +735,7 @@
       flex-shrink: 0;
     }
     .btn-mini {
-      padding: 4px 10px;
+      padding: 5px 10px;
       border-radius: 6px;
       font-size: 12px;
       border: 1px solid #cbd5e1;
@@ -673,16 +754,189 @@
       margin-bottom: 12px;
       display: none;
     }
+
+    /* ==================== 📱 响应式移动端适配（<= 768px 自动切换移动版） ==================== */
+    @media (max-width: 768px) {
+      /* 👇 新增：锁死移动端根视口，彻底禁止横向拖动和键盘把页面顶飞 */
+      html, body {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        touch-action: pan-y;
+      }
+      .main-stage {
+        width: 100%;
+        max-width: 100vw;
+        height: 100%;
+        overflow: hidden;
+      }
+      .chat-box {
+        width: 100%;
+        overflow-x: hidden;
+      }
+      .welcome-panel,
+      .tpl-grid,
+      .tpl-card {
+        max-width: 100%;
+      }
+      /* 1. 侧边栏变为平滑滑出式抽屉 */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        max-width: 82vw;
+        z-index: 900;
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 6px 0 28px rgba(15, 23, 42, 0.38);
+      }
+      .sidebar-backdrop.open {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 850;
+      }
+      .sidebar-close-btn {
+        display: inline-flex;
+      }
+
+      /* 2. 触摸屏无悬停态：始终展示会话操作按钮，方便手机点击删除/重命名 */
+      .conv-ops {
+        display: flex;
+      }
+
+      /* 3. 顶部栏紧凑防挤压 */
+      .top-bar {
+        height: 54px;
+        padding: 0 12px;
+        gap: 8px;
+      }
+      .menu-toggle-btn {
+        display: inline-flex;
+      }
+      .top-title-wrap {
+        gap: 8px;
+      }
+      .top-title {
+        font-size: 14px;
+      }
+      .badge {
+        font-size: 11px;
+        padding: 2px 8px;
+        max-width: 115px;
+      }
+      .conv-id-hint {
+        display: none; /* 小屏隐藏右侧 ID 提示，防止挤压标题 */
+      }
+
+      /* 4. 聊天内容区扩大横向空间 */
+      .chat-box {
+        padding: 16px 12px;
+        gap: 14px;
+      }
+      .welcome-panel {
+        padding: 10px 0;
+      }
+      .welcome-title {
+        font-size: 20px;
+      }
+      .welcome-sub {
+        font-size: 13px;
+        margin-bottom: 16px;
+        padding: 0 8px;
+      }
+      .tpl-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      /* 5. 气泡尺寸优化 */
+      .msg-row {
+        gap: 8px;
+      }
+      .msg-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      .msg-bubble {
+        max-width: 85%;
+        padding: 10px 13px;
+        font-size: 14px;
+        line-height: 1.58;
+      }
+      .md-content pre {
+        padding: 10px;
+        font-size: 12.5px;
+      }
+
+      /* 6. 输入框：设为 16px 防止 iOS Safari 聚焦时自动放大页面 */
+      .input-wrapper {
+        padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+      }
+      .input-box {
+        padding: 8px 10px;
+        gap: 8px;
+        border-radius: 12px;
+      }
+      .input-box textarea,
+      .form-input,
+      .form-textarea {
+        font-size: 16px;
+      }
+      .btn-send {
+        padding: 8px 14px;
+        font-size: 14px;
+      }
+      .input-hint {
+        font-size: 14px;
+        justify-content: center;
+      }
+
+      /* 7. 弹窗移动端适配 */
+      .modal-mask {
+        padding: 10px;
+      }
+      .modal-header {
+        padding: 14px 16px;
+        font-size: 15px;
+      }
+      .modal-body {
+        padding: 14px 16px;
+      }
+      .tpl-manage-item {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .tpl-manage-actions {
+        align-self: flex-end;
+      }
+    }
   </style>
 </head>
 <body>
 
+  <!-- 移动端遮罩层 -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
   <!-- 左侧边栏：会话管理与用户面板 -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="brand">
-        <div class="brand-icon">🤖</div>
-        <span>mini AI 工作台</span>
+        <div class="brand-left">
+          <div class="brand-icon">🤖</div>
+          <span>mini AI 工作台</span>
+        </div>
+        <button class="sidebar-close-btn" id="closeSidebarBtn" aria-label="关闭菜单">&times;</button>
       </div>
       <div class="sidebar-actions">
         <button class="btn-new-chat" id="newChatBtn">＋ 新建对话</button>
@@ -711,10 +965,11 @@
   <main class="main-stage">
     <header class="top-bar">
       <div class="top-title-wrap">
+        <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="打开会话菜单">☰</button>
         <span class="top-title" id="currentChatTitle">新对话</span>
         <span class="badge default" id="activeTemplateBadge">默认智能助手</span>
       </div>
-      <div style="font-size: 12px; color: var(--text-muted);" id="convIdHint">未创建会话</div>
+      <div class="conv-id-hint" id="convIdHint">未创建会话</div>
     </header>
 
     <div class="chat-box" id="chatBox">
@@ -723,11 +978,11 @@
 
     <div class="input-wrapper">
       <div class="input-box">
-        <textarea id="userInput" rows="1" placeholder="输入你的问题（Enter 发送，Shift + Enter 换行）..."></textarea>
+        <textarea id="userInput" rows="1" placeholder="输入你的问题..."></textarea>
         <button class="btn-send" id="sendBtn">发送</button>
       </div>
       <div class="input-hint">
-        <span>已接入：JWT 鉴权 · 意图路由联网搜索 · MySQL 上下文记忆</span>
+        <!-- <span>已接入：JWT 鉴权 · 意图路由联网搜索 · MySQL 上下文记忆</span> -->
         <span>限流保护：6次/分钟</span>
       </div>
     </div>
@@ -752,7 +1007,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">邮箱</label>
-          <input type="email" class="form-input" id="authEmail" placeholder="例如：admin@qq.com" />
+          <input type="email" class="form-input" id="authEmail" placeholder="例如：demo@qq.com" />
         </div>
         <div class="form-group">
           <label class="form-label">密码</label>
@@ -809,26 +1064,76 @@
   </div>
 
 <script>
-  // 1. 改成相对路径！这样无论是本地 localhost:3000 还是线上 Render 域名都能无缝请求，永远不跨域！
-    const API_BASE = '/api/v3';
-    const AUTH_PREFIX = 'jwt ';
-    const TOKEN_STORAGE_KEY = 'mini_ai_token';
-    // 2. 清空写死的本地老 Token！因为云端是全新数据库，里面一开始没有 id=3 的用户
-    const FALLBACK_TOKEN = '';
+  // ==================== 1. 基础配置区（严格保留你的本地配置与接口路径） ====================
+  const API_BASE = '/api/v3';
+  const AUTH_PREFIX = 'jwt ';
+  const TOKEN_STORAGE_KEY = 'mini_ai_token';
+  const FALLBACK_TOKEN = '';
 
-  
   // ==================== 2. 全局应用状态 ====================
   let state = {
     token: localStorage.getItem(TOKEN_STORAGE_KEY) || FALLBACK_TOKEN,
-    currentUser: null,          // 当前登录用户信息 { id, name, email, role }
-    conversations: [],          // 左侧会话列表
-    templates: [],              // 角色模版列表
-    currentConversationId: null,// null = 新建对话中
-    selectedTemplateId: null,   // 新建对话时选定的模版 ID
+    currentUser: null,
+    conversations: [],
+    templates: [],
+    currentConversationId: null,
+    selectedTemplateId: null,
     isStreaming: false,
     abortController: null,
-    authMode: 'login',          // 'login' | 'register'
+    authMode: 'login',
   };
+
+  // ==================== 响应式抽屉与移动端键盘视口防错位控制 ====================
+  function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebarBackdrop').classList.add('open');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.remove('open');
+  }
+
+  function syncMobileViewport() {
+    if (window.innerWidth <= 768 && window.visualViewport) {
+      // 1. 让 body 高度实时紧贴键盘上方
+      document.body.style.height = `${window.visualViewport.height}px`;
+      // 2. 强行归零 iOS Safari 产生的残余横向/纵向偏移
+      if (window.scrollX !== 0 || window.scrollY !== 0) {
+        window.scrollTo(0, 0);
+      }
+    } else {
+      // 切回 PC 尺寸时清除内联高度
+      document.body.style.height = '';
+    }
+  }
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      closeSidebar();
+    }
+    syncMobileViewport();
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncMobileViewport);
+    window.visualViewport.addEventListener('scroll', syncMobileViewport);
+  }
+
+  document.addEventListener('focusout', () => {
+    if (window.innerWidth <= 768) {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        syncMobileViewport();
+      }, 100);
+    }
+  });
+
+  document.getElementById('userInput').addEventListener('focus', () => {
+    if (window.innerWidth <= 768) {
+      setTimeout(() => {
+        syncMobileViewport();
+        scrollToBottom();
+      }, 250);
+    }
+  });
 
   // ==================== 3. 通用 API 请求封装 ====================
   async function apiRequest(path, options = {}) {
@@ -850,12 +1155,12 @@
       throw new Error(json.message || `请求失败 (${res.status})`);
     }
 
-    // 兼容 TransformInterceptor 包装结构 { code, message, data }
     return json.data !== undefined ? json.data : json;
   }
 
   // ==================== 4. 初始化加载 ====================
   async function initApp() {
+    renderWelcomeStage();
     if (!state.token) {
       openAuthModal();
       return;
@@ -874,7 +1179,6 @@
     document.getElementById('userName').textContent = state.currentUser.name || state.currentUser.email;
     document.getElementById('userRoleBadge').textContent = state.currentUser.role === 'ADMIN' ? '管理员' : '普通用户';
     document.getElementById('userAvatar').textContent = (state.currentUser.name || 'U').slice(0, 1).toUpperCase();
-    // 管理员显示设为公开选项
     document.getElementById('tplIsPublicGroup').style.display = state.currentUser.role === 'ADMIN' ? 'block' : 'none';
   }
 
@@ -906,7 +1210,7 @@
             </div>
           </div>
           <div class="conv-ops" onclick="event.stopPropagation()">
-            <button class="icon-btn" title="重命名" onclick="renameConversation(${conv.id}, '${escapeAttr(conv.title)}')">✏️</button>
+            <button class="icon-btn" title="重命名" onclick="renameConversation(${conv.id})">✏️</button>
             <button class="icon-btn del" title="删除会话" onclick="deleteConversation(${conv.id})">🗑️</button>
           </div>
         </div>
@@ -917,12 +1221,12 @@
   // 点击恢复历史会话上下文
   async function selectConversation(conversationId) {
     if (state.isStreaming) return alert('请先等待或停止当前 AI 回复后再切换会话');
+    closeSidebar(); // 移动端选中会话后自动收起抽屉
     try {
       const data = await apiRequest(`/ai/conversations/${conversationId}/messages`);
       state.currentConversationId = conversationId;
       state.selectedTemplateId = null;
 
-      // 从已加载列表中查找绑定的角色标签
       const convMeta = state.conversations.find(c => c.id === conversationId);
       updateTopBar(data.conversation.title, convMeta?.template?.title || null, conversationId);
 
@@ -944,7 +1248,9 @@
     }
   }
 
-  async function renameConversation(id, oldTitle) {
+  async function renameConversation(id) {
+    const conv = state.conversations.find(c => c.id === id);
+    const oldTitle = conv ? conv.title : '';
     const newTitle = prompt('请输入新的会话标题：', oldTitle);
     if (!newTitle || !newTitle.trim() || newTitle.trim() === oldTitle) return;
     try {
@@ -976,6 +1282,7 @@
 
   function startNewChat() {
     if (state.isStreaming) return;
+    closeSidebar();
     state.currentConversationId = null;
     updateTopBar('新对话', getSelectedTemplateTitle(), null);
     renderConversationList();
@@ -995,7 +1302,7 @@
     document.getElementById('convIdHint').textContent = convId ? `会话 ID: #${convId}` : '新会话（首问自动建库）';
   }
 
-  // ==================== 6. 模版选择与管理 (PromptTemplate) ====================
+  // ==================== 6. 模版选择与管理 (PromptTemplate，保留你的 /prompt 路径) ====================
   async function loadTemplates() {
     const list = await apiRequest('/prompt');
     state.templates = Array.isArray(list) ? list : [];
@@ -1059,7 +1366,7 @@
       const canEdit = state.currentUser && (tpl.userId === state.currentUser.id || state.currentUser.role === 'ADMIN');
       return `
         <div class="tpl-manage-item">
-          <div style="flex: 1; min-width: 0;">
+          <div style="flex: 1; min-width: 0; width: 100%;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
               <strong style="font-size:14px;">${escapeHtml(tpl.title)}</strong>
               <span class="tpl-tag ${tpl.isPublic ? '' : 'private'}">${tpl.isPublic ? '公开' : '私有'}</span>
@@ -1150,7 +1457,6 @@
   // ==================== 7. 核心 SSE 流式聊天与停止控制 ====================
   async function sendMessage() {
     if (state.isStreaming) {
-      // 点击停止输出
       state.abortController?.abort();
       return;
     }
@@ -1159,7 +1465,6 @@
     const text = inputEl.value.trim();
     if (!text) return;
 
-    // 如果当前还在欢迎界面，清空欢迎卡片准备进入对话流
     if (document.querySelector('.welcome-panel')) {
       document.getElementById('chatBox').innerHTML = '';
     }
@@ -1167,10 +1472,8 @@
     inputEl.value = '';
     inputEl.style.height = 'auto';
 
-    // 1. 渲染用户气泡
     appendMessage('user', text, false);
 
-    // 2. 创建 AI 气泡占位
     const { bubbleEl, statusEl, contentEl } = createAiStreamingBubble();
     let fullAIContent = '';
     let isNewConv = !state.currentConversationId;
@@ -1251,7 +1554,6 @@
 
       contentEl.innerHTML = renderMarkdownSafe(fullAIContent || '（空响应）');
 
-      // 刷新左侧列表，保证新标题、消息条数与活跃置顶实时同步
       await loadConversations();
       if (isNewConv && state.currentConversationId) {
         const createdConv = state.conversations.find(c => c.id === state.currentConversationId);
@@ -1265,13 +1567,15 @@
         contentEl.innerHTML = renderMarkdownSafe(fullAIContent + '\n\n*(已手动停止生成)*');
       } else {
         bubbleEl.parentElement.classList.add('error');
-        contentEl.innerHTML = ` ${escapeHtml(err.message)}`;
+        contentEl.innerHTML = `❌ ${escapeHtml(err.message)}`;
       }
     } finally {
-      state.isStreaming = false;
+       state.isStreaming = false;
       state.abortController = null;
       updateSendButtonState(false);
-      inputEl.focus();
+      if (window.innerWidth > 768) {
+        inputEl.focus(); // 仅 PC 端自动重新聚焦，防止手机端回答完莫名其妙又弹出软键盘
+      }
       scrollToBottom();
     }
   }
@@ -1287,7 +1591,7 @@
     }
   }
 
-  function appendMessage(role, content, isStreaming = false) {
+  function appendMessage(role, content) {
     const chatBox = document.getElementById('chatBox');
     const row = document.createElement('div');
     row.className = `msg-row ${role}`;
@@ -1327,6 +1631,7 @@
 
   // ==================== 8. 登录 / 注册逻辑 ====================
   function openAuthModal(errMsg = '') {
+    closeSidebar();
     hideError('authError');
     if (errMsg) showError('authError', errMsg);
     document.getElementById('authModal').classList.add('open');
@@ -1386,30 +1691,21 @@
       .replace(/"/g, '&quot;');
   }
 
-  function escapeAttr(str) {
-    return escapeHtml(str).replace(/'/g, '&#39;');
-  }
-
   function renderMarkdownSafe(text) {
     let safe = escapeHtml(text);
     const codeBlocks = [];
 
-    // 1. 提取代码块避免内部符号被破坏
     safe = safe.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
       const idx = codeBlocks.length;
       codeBlocks.push(`<pre><code>${code}</code></pre>`);
       return `__CODE_BLOCK_${idx}__`;
     });
 
-    // 2. 行内代码、粗体、链接
     safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
     safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     safe = safe.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-
-    // 3. 换行转段落/换行
     safe = safe.replace(/\n/g, '<br />');
 
-    // 4. 还原代码块
     codeBlocks.forEach((block, idx) => {
       safe = safe.replace(`__CODE_BLOCK_${idx}__`, block);
     });
@@ -1432,6 +1728,10 @@
   }
 
   // ==================== 10. 事件绑定 ====================
+  document.getElementById('menuToggleBtn').addEventListener('click', openSidebar);
+  document.getElementById('closeSidebarBtn').addEventListener('click', closeSidebar);
+  document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebar);
+
   document.getElementById('newChatBtn').addEventListener('click', startNewChat);
   document.getElementById('sendBtn').addEventListener('click', sendMessage);
   document.getElementById('authBtn').addEventListener('click', () => openAuthModal());
@@ -1441,6 +1741,7 @@
   document.getElementById('authSubmitBtn').addEventListener('click', handleAuthSubmit);
 
   document.getElementById('managePromptsBtn').addEventListener('click', () => {
+    closeSidebar();
     resetPromptForm();
     loadTemplates();
     document.getElementById('promptModal').classList.add('open');
@@ -1449,7 +1750,6 @@
   document.getElementById('savePromptBtn').addEventListener('click', saveTemplate);
   document.getElementById('resetPromptBtn').addEventListener('click', resetPromptForm);
 
-  // 输入框自适应高度 & 回车发送
   const userInputEl = document.getElementById('userInput');
   userInputEl.addEventListener('input', function () {
     this.style.height = 'auto';
@@ -1462,7 +1762,6 @@
     }
   });
 
-  // 启动页面
   initApp();
 </script>
 </body>
