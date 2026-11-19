@@ -38,8 +38,8 @@ export class AuthService {
       data: {
         email: dto.email,
         name: dto.name,
-        role: 'ADMIN',
-        password: hashedPassword, // 存入的是 $2b$10$... 开头的密文，绝对不可逆
+        role: 'USER',
+        password: hashedPassword, // 秘钥
       },
       // 4. 关键安全规范：返回结果绝对不能包含 password 字段
       select: {

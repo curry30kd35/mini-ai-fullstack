@@ -17,6 +17,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TasksService } from './common/tasks.service';
 import { AiModule } from './modules/ai/ai.module';
 import { PromptModule } from './modules/prompt/prompt.module';
+import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 
 @Module({
   imports: [
@@ -53,7 +54,8 @@ import { PromptModule } from './modules/prompt/prompt.module';
     ]),
     ScheduleModule.forRoot(),
     AiModule,
-    PromptModule, // 开启定时任务调度
+    PromptModule,
+    KnowledgeModule, // 开启定时任务调度
   ],
   controllers: [AppController],
   providers: [

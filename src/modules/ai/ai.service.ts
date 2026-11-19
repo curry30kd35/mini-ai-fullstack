@@ -7,6 +7,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { ChatDto } from './dto/chat.dto';
 import { SearchService } from './search.service'; // 新增
 import { UpdateConversationDto } from './dto/update-conversation.dto';
+import { KnowledgeService } from '../knowledge/knowledge.service';
 
 @Injectable()
 export class AiService {
@@ -18,6 +19,7 @@ export class AiService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly searchService: SearchService, // 新增依赖注入
+    private readonly knowledgeService: KnowledgeService,
   ) {
     const apiKey = this.configService.get<string>('AI_API_KEY');
     const baseURL = this.configService.get<string>('AI_BASE_URL');
@@ -300,6 +302,22 @@ export class AiService {
     const shortDateStr = `${month}月${day}日`; // 如：11月17日
 
     let searchContext = '';
+
+    let kbContext = ''; // 👈 存放命中私有知识库的文本
+
+    try {
+      const kbDocs = await this.knowledgeService.searchRelevant(userId, dto.prompt);
+      if (kbDocs.length > 0) {
+        kbContext = kbDocs
+          .map((doc, idx) => `[内部知识 ${idx + 1}] 《${doc.title}》\n${doc.content}`)
+          .join('\n\n');
+        this.logger.log(`命中企业私有知识库 ${kbDocs.length} 篇: ${kbDocs.map(d => d.title).join(', ')}`);
+      }
+    } catch (kbErr) {
+      // 容错降级：就算知识库查询出错，也绝不影响主聊天流程！
+      this.logger.warn('私有知识库检索异常，已忽略:', kbErr);
+    }
+
     const hasTavilyKey = !!this.configService.get<string>('TAVILY_API_KEY');
     const apiKey = this.configService.get<string>('AI_API_KEY');
 
@@ -312,8 +330,14 @@ export class AiService {
 
     res.write(`data: ${JSON.stringify({ type: 'meta', conversationId })}\n\n`);
 
+    if (kbContext) {
+      res.write(
+        `data: ${JSON.stringify({ type: 'status', message: '已命中企业私有知识库资料' })}\n\n`,
+      );
+    }
+
     try {
-      if (hasTavilyKey && apiKey) {
+      if (!kbContext && hasTavilyKey && apiKey) {
         // 1. 让 AI 先判断：到底需不需要联网？如果需要，提纯出干净的搜索词！
         const intent = await this.analyzeIntentAndRewriteQuery(
           historyContext,
@@ -352,7 +376,15 @@ export class AiService {
     // 构建角色开场设定：如果绑定了模版，优先用模版的提示词；否则用默认提示词
     const roleSetting =
       customSystemPrompt || '你是一个聪明、严谨、善于沟通的智能助手。';
-    if (searchContext) {
+
+    if (kbContext) {
+      // 【模式 C：企业私有知识库 RAG 精准作答模式】
+      systemPrompt = `${roleSetting}
+当前北京时间是 ${currentDateStr}（${weekday}）。
+你现在是企业内部专属智能助理，请严格依据下方检索到的【企业内部私有知识库资料】，准确、热情地回答用户的问题；若资料中未提及某细节，请如实说明，切勿胡编公司规则。`;
+
+      finalUserPrompt = `【企业内部私有知识库资料】：\n${kbContext}\n\n【用户当前提问】：${dto.prompt}`;
+    } else if (searchContext) {
       // 【模式 A：联网增强模式（加入强力时间对齐防线）】
       systemPrompt = `${roleSetting}
 【绝对真实时间锚点】：现在的北京时间是 ${currentDateStr}（${weekday}）。
