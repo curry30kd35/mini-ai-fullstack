@@ -23,6 +23,13 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  // 获取所有用户
+  // @Get('user-list')
+  // @UseGuards(JwtAuthGuard) //  挂上安全锁！没有合法 Token 绝对进不来！
+  // getUserList() {
+  //   return this.authService.getUserList();
+  // }
+
   /**
    * 登录接口：遵循行业规范，显式返回 200 OK（NestJS POST 默认是 201）
    */

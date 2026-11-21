@@ -102,4 +102,20 @@ export class AuthService {
       },
     };
   }
+
+  // 获取所有用户
+  async getUserList() {
+    return this.prisma.user.findMany({
+      where: {
+        isDeleted: false,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      },
+    });
+  }
 }
